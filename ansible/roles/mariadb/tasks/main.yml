@@ -1,0 +1,37 @@
+- name: Install MariaDB
+  apt:
+    name: mariadb-server
+    state: present
+    update_cache: yes
+
+- name: Ensure MariaDB started
+  service:
+    name: mariadb
+    state: started
+    enabled: true
+
+- name: Secure root & create DB/user
+  mysql_user:
+    name: root
+    host: localhost
+    password: "{{ mautic.db_root_password }}"
+    login_unix_socket: /var/run/mysqld/mysqld.sock
+  when: mautic.db_root_password is defined
+
+- name: Create database
+  mysql_db:
+    name: "{{ mautic.db.name }}"
+    encoding: utf8mb4
+    collation: utf8mb4_unicode_ci
+    login_user: root
+    login_password: "{{ mautic.db_root_password }}"
+
+- name: Create user
+  mysql_user:
+    name: "{{ mautic.db.user }}"
+    password: "{{ mautic.db.password }}"
+    host: localhost
+    priv: "{{ mautic.db.name }}.*:ALL"
+    login_user: root
+    login_password: "{{ mautic.db_root_password }}"
+

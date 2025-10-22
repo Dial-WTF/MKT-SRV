@@ -1,0 +1,89 @@
+---
+- name: Prepare secrets for Mautic (local-only)
+  hosts: localhost
+  connection: local
+  gather_facts: false
+  vars:
+    secrets_path: 'group_vars/secrets.vault.yml'
+    vaultpass_path: '../.vaultpass'
+
+  tasks:
+    - name: Ensure group_vars directory exists
+      file:
+        path: 'group_vars'
+        state: directory
+
+    - name: Check if secrets file exists
+      stat:
+        path: '{{ secrets_path }}'
+      register: secrets_stat
+
+    - name: Detect if secrets file is already vault-encrypted
+      shell: "grep -q '^\\$ANSIBLE_VAULT;' '{{ secrets_path }}'"
+      register: encrypted_check
+      changed_when: false
+      failed_when: false
+      when: secrets_stat.stat.exists
+
+    - name: Read existing secrets (only if not encrypted)
+      slurp:
+        path: '{{ secrets_path }}'
+      register: raw_secrets
+      when: secrets_stat.stat.exists and (encrypted_check.rc is defined and encrypted_check.rc != 0)
+
+    - name: Initialize existing_secrets as empty
+      set_fact:
+        existing_secrets: {}
+
+    - name: Parse existing YAML when present
+      set_fact:
+        existing_secrets: '{{ (raw_secrets.content | b64decode) | from_yaml }}'
+      when: raw_secrets is defined and (raw_secrets.content is defined)
+
+    - name: Generate random admin password (24 chars)
+      set_fact:
+        gen_admin_password: "{{ lookup('password', '/dev/null length=24 chars=ascii_letters,digits') }}"
+
+    - name: Generate random DB user password (24 chars)
+      set_fact:
+        gen_db_password: "{{ lookup('password', '/dev/null length=24 chars=ascii_letters,digits') }}"
+
+    - name: Generate random DB root password (32 chars)
+      set_fact:
+        gen_db_root_password: "{{ lookup('password', '/dev/null length=32 chars=ascii_letters,digits') }}"
+
+    - name: Compute merged secrets (fill only if missing)
+      set_fact:
+        merged_secrets:
+          mautic:
+            admin_password: '{{ (existing_secrets.mautic.admin_password if (existing_secrets is defined and existing_secrets.mautic is defined and existing_secrets.mautic.admin_password is defined) else gen_admin_password) }}'
+            db:
+              password: '{{ (existing_secrets.mautic.db.password if (existing_secrets is defined and existing_secrets.mautic is defined and existing_secrets.mautic.db is defined and existing_secrets.mautic.db.password is defined) else gen_db_password) }}'
+            db_root_password: '{{ (existing_secrets.mautic.db_root_password if (existing_secrets is defined and existing_secrets.mautic is defined and existing_secrets.mautic.db_root_password is defined) else gen_db_root_password) }}'
+      when: (encrypted_check.rc is not defined) or (encrypted_check.rc != 0)
+
+    - name: Write secrets file (unencrypted)
+      copy:
+        dest: '{{ secrets_path }}'
+        content: "{{ merged_secrets | to_nice_yaml }}\n"
+        mode: '0600'
+      when: (encrypted_check.rc is not defined) or (encrypted_check.rc != 0)
+
+    - name: Check if vault password file exists
+      stat:
+        path: '{{ vaultpass_path }}'
+      register: vaultpass_stat
+
+    - name: Encrypt secrets with ansible-vault (idempotent)
+      command: >-
+        ansible-vault encrypt {{ secrets_path }} --vault-password-file {{ vaultpass_path }}
+      when:
+        - vaultpass_stat.stat.exists
+        - (encrypted_check.rc is not defined) or (encrypted_check.rc != 0)
+      changed_when: true
+
+    - name: Summary
+      debug:
+        msg:
+          - 'Secrets prepared at {{ secrets_path }}'
+          - "Encrypted: {{ 'yes' if (vaultpass_stat.stat.exists) else 'no' }}"

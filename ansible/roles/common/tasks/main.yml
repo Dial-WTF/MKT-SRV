@@ -1,0 +1,34 @@
+- name: Ensure base packages
+  apt:
+    name:
+      - software-properties-common
+      - curl
+      - ca-certificates
+      - unzip
+      - git
+      - ufw
+      - jq
+      - acl
+    state: present
+    update_cache: yes
+
+- name: Optional 2G swap
+  command: bash -lc '[[ -f /swapfile ]] || (fallocate -l 2G /swapfile || dd if=/dev/zero of=/swapfile bs=1M count=2048 && chmod 600 /swapfile && mkswap /swapfile && swapon /swapfile && echo "/swapfile none swap sw 0 0" >> /etc/fstab)'
+  args:
+    creates: /swapfile
+
+- name: UFW basics
+  ufw:
+    state: enabled
+    policy: deny
+
+- name: Allow OpenSSH
+  ufw:
+    rule: allow
+    name: OpenSSH
+
+- name: Allow Nginx Full
+  ufw:
+    rule: allow
+    name: "Nginx Full"
+

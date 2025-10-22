@@ -1,125 +1,149 @@
-# MKT-SRV
+# MKT-SRV – Vanilla Mautic (Single Host)
 
-A TypeScript-first marketing server that can email, track, host funnel pages, and power automations (including AI-driven features). The project aims to integrate with Mautic while remaining modular so you can swap providers and infrastructure over time.
+Provision a vanilla Mautic stack on one Ubuntu host via Ansible. Defaults to HTTP-only for fast bootstrap; enable Let’s Encrypt either during provision (if DNS is ready) or after initial install. Database runs on the same host (local MariaDB). A clean path is provided to migrate to an external/managed MariaDB later.
 
-## Features
-
-- **Email campaigns**: broadcasts, drip/automation sequences, templating, and provider abstraction (SES/SendGrid/Postmark).
-- **Tracking & analytics**: link tracking/redirector, page view tracking, UTM capture, webhooks, and contact timeline.
-- **Funnel hosting**: fast Next.js funnel pages with forms, A/B tests, and shared UI primitives.
-- **Automations & AI**: rules-based workflows, lead scoring, and optional AI assistants for copy and segmentation.
-- **Mautic integration (optional)**: sync contacts, segments, and campaign events.
-
-## Tech Stack (planned)
-
-- **Language**: TypeScript
-- **Web app**: Next.js (App Router)
-- **Runtime**: Node.js 20+
-- **Database**: PostgreSQL (via Prisma)
-- **Cache/Queue**: Redis (BullMQ for jobs)
-- **Email providers**: pluggable adapters (SES/SendGrid/Postmark)
-- **Analytics/Tracking**: first-party tracking pixel + redirector service
-- **Mautic**: optional self-host via Docker
-
-> Note: This repository is at project inception; modules will be added incrementally.
-
-## Monorepo layout (proposed)
+## Repository layout
 
 ```
-apps/
-  web/          # Next.js app for funnels, admin, and public pages
-  worker/       # Job runner (queues, scheduled tasks)
-packages/
-  core/         # Domain models, services, adapters, shared logic
-  ui/           # Shared UI components for Next.js
-  tracking/     # Pixel, link redirector, and event ingestion
+ansible/
+  inventories/
+    production/hosts.ini
+  group_vars/
+    all.yml
+    secrets.vault.yml   # encrypt with ansible-vault
+  roles/
+    common/
+    nginx/
+    php/
+    mariadb/
+    redis/
+    mautic/
+  playbooks/
+    site.yml
+  ansible.cfg
+.github/workflows/
+  ci.yml
+  deploy.yml
+.devcontainer/devcontainer.json
+Taskfile.yml
+README.md
 ```
 
-## Getting Started
+## Prerequisites
 
-### Prerequisites
+- Ubuntu host reachable via SSH (user with sudo)
+- A domain (only required when enabling HTTPS)
+- Ansible installed locally or use the provided GitHub Actions
 
-- Node.js 20+
-- pnpm (or npm/yarn)
-- Docker (for optional Mautic or dependencies)
+## Quickstart
 
-### Setup
-
-1. Clone the repository
-   ```bash
-   git clone https://github.com/adammmanka/MKT-SRV.git
-   cd MKT-SRV
-   ```
-2. Install dependencies (to be added as code lands)
-   ```bash
-   pnpm install
-   ```
-3. Copy environment config
-   ```bash
-   cp .env.example .env
-   ```
-4. Fill required environment variables in `.env` (draft list):
-   - DATABASE_URL=postgres://...
-   - REDIS_URL=redis://...
-   - EMAIL_PROVIDER=ses|sendgrid|postmark
-   - EMAIL_FROM=marketing@example.com
-   - MAUTIC_URL=https://your-mautic.example.com
-   - MAUTIC_USERNAME=...
-   - MAUTIC_PASSWORD=...
-   - NEXT_PUBLIC_SITE_URL=http://localhost:3000
-   - ENCRYPTION_KEY=...
-
-### Run Mautic locally (optional)
-
-You can self-host Mautic via Docker for local development. Refer to Mautic's official images and compose examples. A minimal outline:
+1. Create a vault password file (for CI you’ll set it as a secret):
 
 ```bash
-docker run -d \
-  --name mautic \
-  -p 8080:80 \
-  -e MAUTIC_DB_HOST=your-db \
-  -e MAUTIC_DB_USER=mautic \
-  -e MAUTIC_DB_PASSWORD=mautic \
-  -e MAUTIC_DB_NAME=mautic \
-  mautic/mautic:latest
+printf '%s' 'YOUR_VAULT_PASSWORD' > .vaultpass
 ```
 
-### Development
+2. Set inventory host and SSH user in `ansible/inventories/production/hosts.ini` (or export `SSH_HOST`/`SSH_USER`).
 
-- Web (Next.js):
-  ```bash
-  pnpm dev
-  ```
-- Worker (jobs/queues):
-  ```bash
-  pnpm worker:dev
-  ```
+3. Prepare secrets (one-time):
 
-## Deployment
+```bash
+task prepare
+```
 
-- Next.js hosting (e.g., Vercel) for `apps/web`.
-- Worker on a Node runtime (e.g., Fly.io/Render/Heroku) and managed Redis.
-- PostgreSQL via a managed service (e.g., Neon, RDS).
+4. HTTP-first install (fast start):
 
-## Security & Compliance
+```bash
+ansible-playbook -i ansible/inventories/production/hosts.ini ansible/playbooks/site.yml \
+  --vault-password-file .vaultpass \
+  -e enable_letsencrypt=false -e db_backend=local
+```
 
-- Enforced unsubscribe/opt-out and preference management
-- GDPR/CCPA considerations for data collection and subject requests
-- Signed links and CSRF protections on forms
+5. Optional: Enable HTTPS now or later (idempotent):
 
-## Roadmap
+```bash
+ansible-playbook -i ansible/inventories/production/hosts.ini ansible/playbooks/site.yml \
+  --vault-password-file .vaultpass \
+  -e enable_letsencrypt=true -e domain="YOUR_DOMAIN" -e letsencrypt_email="YOU@example.com"
+```
 
-- [ ] Scaffold Next.js app and workspace
-- [ ] Tracking pixel and link redirector
-- [ ] Email provider abstraction and templates
-- [ ] Mautic sync: contacts, segments, campaign events
-- [ ] Automations engine and AI helpers
+6. Visit `http(s)://YOUR_DOMAIN` to access Mautic. Admin user is created from `group_vars` on first run.
 
-## Contributing
+## Variables & Secrets
 
-PRs are welcome. Please open an issue to discuss substantial changes or new modules.
+- `enable_letsencrypt` (bool): default `false`
+- `domain`, `letsencrypt_email`: needed when TLS is enabled
+- `db_backend`: `local` or `external`
+- Local DB vars under `mautic.db.*` in `group_vars/all.yml`
+- External DB vars: `db_host`, `db_port`, `db_name`, `db_user`; secret `db_password`
+- Secrets: store in `ansible/group_vars/secrets.vault.yml` and encrypt with `ansible-vault`
+
+## External DB migration (optional later)
+
+1. Put Mautic in maintenance (UI) and stop crons
+2. Dump current DB:
+
+```bash
+mysqldump -u root -p --single-transaction --routines --triggers mautic > mautic.sql
+```
+
+3. Create DB/user on external MariaDB and import the dump
+4. Re-provision pointing to the external DB:
+
+```bash
+ansible-playbook -i ansible/inventories/production/hosts.ini ansible/playbooks/site.yml \
+  --vault-password-file .vaultpass \
+  -e db_backend=external -e db_host="DB_HOST" -e db_port=3306 -e db_name="mautic" -e db_user="mautic"
+```
+
+5. Verify login, segments, and campaigns; re-enable crons
+
+## CI/CD
+
+- `ci.yml` runs `ansible-lint` and `yamllint`
+- `deploy.yml` provisions on pushes to `main`. Set repository secrets:
+  - `SSH_HOST`, `SSH_USER`, `SSH_KEY`
+  - `ANSIBLE_VAULT_PASSWORD`
+  - `DOMAIN`, `EMAIL` (for TLS)
+
+## Dev tooling
+
+- Devcontainer installs Ansible + linters
+- `Taskfile.yml` provides helpers:
+  - `task lint` — run linters
+  - `task ping` — Ansible ping
+  - `task deploy:localdb` — provision with local DB
+  - `task deploy:externaldb` — provision pointing to external DB
+  - `task bl:provision` — create a BitLaunch server and write inventory
+  - `task bl:destroy IP=1.2.3.4` — destroy a BitLaunch server by IP
+
+## Optional: Provisioning via BitLaunch
+
+If you prefer not to pre-provision a server, you can create one on BitLaunch:
+
+1. Set `BITLAUNCH_API_KEY` in your environment or `.env` in repo root.
+2. Optionally adjust `HOST_ID`, `HOST_IMAGE_ID`, `SIZE_ID`, `REGION_ID`, `SERVER_NAME`.
+3. Run:
+
+```bash
+task bl:provision
+```
+
+This generates a temporary SSH keypair in `./tmp_ssh_keys/`, creates a server, and writes `ansible/inventories/production/hosts.ini` with `ansible_ssh_private_key_file` pointing to the key.
+
+Destroying a server:
+
+```bash
+task bl:destroy IP=1.2.3.4
+```
+
+## Acceptance criteria
+
+- Mautic login reachable over HTTP/HTTPS
+- Admin user exists and works
+- Idempotent re-runs (0 changes except renewals)
+- Cron jobs present and logging to `/opt/mautic/logs/cron.log`
 
 ## License
 
 MIT
-# MKT-SRV

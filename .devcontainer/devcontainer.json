@@ -1,0 +1,19 @@
+{
+  "name": "mkt-srv",
+  "image": "mcr.microsoft.com/devcontainers/base:ubuntu",
+  "features": {
+    "ghcr.io/devcontainers/features/git:1": {},
+    "ghcr.io/devcontainers/features/common-utils:2": {}
+  },
+  "postCreateCommand": "sudo apt-get update && sudo apt-get install -y python3-pip shellcheck hadolint && pip install ansible ansible-lint yamllint",
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "timonwong.shellcheck",
+        "EditorConfig.EditorConfig",
+        "github.vscode-github-actions"
+      ]
+    }
+  }
+}
+

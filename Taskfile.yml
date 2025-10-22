@@ -1,0 +1,38 @@
+version: '3'
+
+vars:
+  INV: ansible/inventories/production/hosts.ini
+
+tasks:
+  bl:provision:
+    desc: Provision a server on BitLaunch and write inventory
+    cmds:
+      - bash scripts/provision-bitlaunch.sh
+  bl:destroy:
+    desc: Destroy a BitLaunch server by IP
+    cmds:
+      - bash scripts/destroy-bitlaunch.sh {{.IP}}
+  deps:
+    cmds:
+      - pip install --user ansible ansible-lint yamllint || true
+  lint:
+    cmds:
+      - ansible-lint
+      - yamllint .
+  ping:
+    dir: ansible
+    cmds:
+      - ansible -i {{.INV}} web -m ping
+  prepare:
+    dir: ansible
+    desc: Generate secrets and encrypt with vault if .vaultpass exists
+    cmds:
+      - ansible-playbook playbooks/prepare.yml
+  deploy:localdb:
+    dir: ansible
+    cmds:
+      - ansible-playbook -i {{.INV}} playbooks/site.yml --vault-password-file ../.vaultpass -e db_backend=local
+  deploy:externaldb:
+    dir: ansible
+    cmds:
+      - ansible-playbook -i {{.INV}} playbooks/site.yml --vault-password-file ../.vaultpass -e db_backend=external -e db_host=${DB_HOST} -e db_port=${DB_PORT:-3306} -e db_name=${DB_NAME:-mautic} -e db_user=${DB_USER:-mautic}

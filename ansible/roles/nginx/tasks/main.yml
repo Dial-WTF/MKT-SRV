@@ -1,0 +1,47 @@
+- name: Install Nginx & Certbot
+  apt:
+    name:
+      - nginx
+      - python3-certbot-nginx
+    state: present
+    update_cache: yes
+
+- name: Vhost
+  copy:
+    dest: /etc/nginx/sites-available/mautic.conf
+    content: |
+      server {
+          listen 80;
+          server_name {{ domain }};
+          root /opt/mautic/apps/mautic/current/public;
+          index index.php index.html;
+          client_max_body_size {{ max_upload }};
+          location / { try_files $uri /index.php$is_args$args; }
+          location ~ \.php$ {
+              include snippets/fastcgi-php.conf;
+              fastcgi_pass unix:/run/php/php{{ php_version }}-fpm-mautic.sock;
+              fastcgi_read_timeout 300;
+          }
+          location ~* \.(?:css|js|jpg|jpeg|gif|png|svg|ico|woff|woff2)$ { expires 7d; access_log off; }
+          add_header X-Frame-Options SAMEORIGIN;
+          add_header X-Content-Type-Options nosniff;
+      }
+
+- file:
+    src: /etc/nginx/sites-available/mautic.conf
+    dest: /etc/nginx/sites-enabled/mautic.conf
+    state: link
+    force: true
+
+- file:
+    path: /etc/nginx/sites-enabled/default
+    state: absent
+
+- name: Test & reload
+  shell: nginx -t && systemctl reload nginx
+
+- name: Obtain/renew Let's Encrypt (optional)
+  shell: |
+    certbot --nginx -d {{ domain }} -m {{ letsencrypt_email }} --agree-tos --redirect --non-interactive
+  when: enable_letsencrypt | default(false)
+

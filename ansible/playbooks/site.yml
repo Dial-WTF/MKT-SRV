@@ -1,0 +1,13 @@
+- name: Provision Mautic stack
+  hosts: web
+  become: true
+  vars:
+    enable_letsencrypt: "{{ enable_letsencrypt | default(false) }}"
+  roles:
+    - common
+    - nginx
+    - php
+    - mariadb
+    - redis
+    - mautic
+

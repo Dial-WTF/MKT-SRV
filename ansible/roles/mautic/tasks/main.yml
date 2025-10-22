@@ -1,0 +1,66 @@
+- name: Ensure dirs
+  file:
+    path: "/opt/mautic/apps/mautic/releases"
+    state: directory
+    owner: www-data
+    group: www-data
+    mode: '0755'
+
+- name: Install Composer
+  apt:
+    name: composer
+    state: present
+
+- name: Create new release
+  shell: |
+    TS=$(date +%Y%m%d%H%M%S)
+    cd /opt/mautic/apps/mautic && composer create-project mautic/recommended-project releases/$TS --no-interaction
+    ln -sfn /opt/mautic/apps/mautic/releases/$TS /opt/mautic/apps/mautic/current
+  args:
+    creates: "/opt/mautic/apps/mautic/current"
+
+- name: Write .env.local
+  copy:
+    dest: /opt/mautic/apps/mautic/current/.env.local
+    owner: www-data
+    group: www-data
+    mode: '0644'
+    content: |
+      MAUTIC_ENV=prod
+      MAUTIC_URL=https://{{ domain }}
+      {% if db_backend == 'external' %}
+      DB_HOST={{ db_host }}
+      DB_PORT={{ db_port | default(3306) }}
+      DB_NAME={{ db_name }}
+      DB_USER={{ db_user }}
+      DB_PASSWORD={{ db_password }}
+      {% else %}
+      DB_HOST=127.0.0.1
+      DB_PORT=3306
+      DB_NAME={{ mautic.db.name }}
+      DB_USER={{ mautic.db.user }}
+      DB_PASSWORD={{ mautic.db.password }}
+      {% endif %}
+      CACHE_ADAPTER=redis
+      REDIS_HOST=127.0.0.1
+      REDIS_PORT=6379
+
+- name: Run migrations
+  become_user: www-data
+  shell: |
+    cd /opt/mautic/apps/mautic/current && php bin/console doctrine:migrations:migrate --no-interaction
+
+- name: Create admin user if missing
+  become_user: www-data
+  shell: |
+    cd /opt/mautic/apps/mautic/current && php bin/console mautic:user:create --role=Admin --email={{ mautic.admin_email }} --username={{ mautic.admin_user }} --password={{ mautic.admin_password }} || true
+
+- name: Cron jobs
+  copy:
+    dest: /etc/cron.d/mautic
+    mode: '0644'
+    content: |
+      * * * * * www-data php /opt/mautic/apps/mautic/current/bin/console mautic:segments:update --batch-limit=300 >> /opt/mautic/logs/cron.log 2>&1
+      */5 * * * * www-data php /opt/mautic/apps/mautic/current/bin/console mautic:campaigns:update >> /opt/mautic/logs/cron.log 2>&1
+      */5 * * * * www-data php /opt/mautic/apps/mautic/current/bin/console mautic:campaigns:trigger >> /opt/mautic/logs/cron.log 2>&1
+

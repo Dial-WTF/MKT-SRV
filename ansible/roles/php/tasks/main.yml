@@ -1,0 +1,58 @@
+- name: Add PHP PPA
+  apt_repository:
+    repo: ppa:ondrej/php
+
+- name: Install PHP-FPM and extensions
+  apt:
+    name:
+      - "php{{ php_version }}"
+      - "php{{ php_version }}-fpm"
+      - "php{{ php_version }}-cli"
+      - "php{{ php_version }}-mysql"
+      - "php{{ php_version }}-xml"
+      - "php{{ php_version }}-mbstring"
+      - "php{{ php_version }}-curl"
+      - "php{{ php_version }}-zip"
+      - "php{{ php_version }}-intl"
+      - "php{{ php_version }}-gd"
+      - "php{{ php_version }}-imap"
+      - "php{{ php_version }}-ldap"
+      - "php{{ php_version }}-opcache"
+    state: present
+    update_cache: yes
+
+- name: Create PHP-FPM pool for Mautic
+  copy:
+    dest: "/etc/php/{{ php_version }}/fpm/pool.d/mautic.conf"
+    content: |
+      [mautic]
+      user = www-data
+      group = www-data
+      listen = /run/php/php{{ php_version }}-fpm-mautic.sock
+      listen.owner = www-data
+      listen.group = www-data
+      pm = dynamic
+      pm.max_children = 20
+      pm.start_servers = 4
+      pm.min_spare_servers = 2
+      pm.max_spare_servers = 8
+      request_terminate_timeout = 300
+      php_admin_value[upload_max_filesize] = {{ max_upload }}
+      php_admin_value[post_max_size] = {{ max_upload }}
+      php_admin_value[memory_limit] = 512M
+      php_admin_value[max_execution_time] = 300
+      chdir = /opt/mautic/apps/mautic/current/public
+      clear_env = no
+
+- name: Disable default www pool
+  lineinfile:
+    path: "/etc/php/{{ php_version }}/fpm/pool.d/www.conf"
+    regexp: '^\[www\]'
+    line: ';[www]'
+
+- name: Enable PHP-FPM
+  service:
+    name: "php{{ php_version }}-fpm"
+    state: started
+    enabled: true
+
