@@ -83,4 +83,7 @@ yarn-debug.log*
 yarn-error.log*
 .pnpm-debug.log*
 
-.llm-examples/
+!include.llm-examples/
+!include .vscode
+!include .editorconfig
+!include .env*
