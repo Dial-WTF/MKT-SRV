@@ -123,6 +123,7 @@ ansible-playbook -i ansible/inventories/production/hosts.ini ansible/playbooks/s
 - `task docker:up` — start Docker dev environment only
 - `task docker:down` — stop Docker dev environment
 - `task docker:logs` — view Docker dev environment logs
+- `task gh:secrets` — configure GitHub repository secrets for CI/CD
 
 ### Local dev options
 

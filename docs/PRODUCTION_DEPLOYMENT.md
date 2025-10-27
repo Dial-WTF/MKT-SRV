@@ -14,12 +14,32 @@ This guide shows how to deploy vanilla Mautic to production using BitLaunch and 
 
 ### 1. Configure GitHub Secrets
 
-In your repository settings, add these secrets:
+**Option A: Automated (recommended)**
+
+```bash
+# Install GitHub CLI if needed
+brew install gh
+
+# Run the setup script
+task gh:secrets
+
+# Follow prompts to set:
+# - ANSIBLE_VAULT_PASSWORD (from .vaultpass)
+# - BITLAUNCH_API_KEY (from .env)
+# - DOMAIN (your domain)
+# - EMAIL (for Let's Encrypt)
+# - SSH_USER (usually 'root')
+```
+
+**Option B: Manual**
+
+In your repository settings (Settings → Secrets → Actions), add:
 
 - `BITLAUNCH_API_KEY` - Your BitLaunch API key
 - `ANSIBLE_VAULT_PASSWORD` - Contents of your `.vaultpass` file
 - `DOMAIN` - Your domain (e.g., mautic.yourdomain.com)
 - `EMAIL` - Your email for Let's Encrypt notifications
+- `SSH_USER` - Usually `root` or `ubuntu`
 
 ### 2. Provision Production Server
 
@@ -67,6 +87,7 @@ ansible-vault view ansible/group_vars/secrets.vault.yml --vault-password-file .v
 ```
 
 **Database credentials:**
+
 - Host: `127.0.0.1`
 - Port: `3306`
 - Database: `mautic`
@@ -75,23 +96,45 @@ ansible-vault view ansible/group_vars/secrets.vault.yml --vault-password-file .v
 - Table Prefix: Leave empty or use `m_`
 
 **Admin user:**
+
 - Username: `admin`
 - Password: `[from vault: mautic.admin_password]`
 - Email: `[from group_vars/all.yml: mautic.admin_email]`
 
-### 6. Enable HTTPS (after DNS points to server)
+### 6. Point DNS to Server
+
+**Option A: Automated (Dynadot API)**
 
 ```bash
-# Update your DNS A record to point to the server IP
-# Wait for propagation (check: dig yourdomain.com)
+# Add to .env:
+# DYNADOT_API_KEY=your_key_here
 
-# Then run:
+# Update DNS automatically
+task dns:update
+
+# Follow prompts for subdomain and root domain
+```
+
+**Option B: Manual**
+
+Update your DNS A record in Dynadot:
+- Record: `mautic` (or your subdomain)
+- Type: `A`
+- Value: `YOUR_SERVER_IP` (from step 2)
+- TTL: `300` (5 minutes)
+
+Wait for propagation: `dig mautic.yourdomain.com`
+
+### 7. Enable HTTPS
+
+```bash
 ansible-playbook -i ansible/inventories/production/hosts.ini ansible/playbooks/site.yml \
   --vault-password-file .vaultpass \
   -e enable_letsencrypt=true -e domain="mautic.yourdomain.com" -e letsencrypt_email="you@example.com"
 ```
 
 This will:
+
 - Install Let's Encrypt certificate
 - Configure Nginx for HTTPS
 - Redirect HTTP → HTTPS
@@ -112,6 +155,7 @@ Every push to `main` triggers `.github/workflows/deploy.yml`:
 **Update GitHub Secrets:**
 
 After provisioning, update these in GitHub:
+
 - `SSH_HOST` - Your server IP (from `task bl:provision` output)
 - `SSH_USER` - `root` (or `ubuntu` depending on your setup)
 - `SSH_KEY` - Your SSH private key from `tmp_ssh_keys/`
@@ -145,11 +189,13 @@ scp -i tmp_ssh_keys/YOUR_KEY root@YOUR_IP:~/mautic.sql ./
 ### 3. Update Ansible Variables
 
 Edit `ansible/group_vars/all.yml`:
+
 ```yaml
 db_backend: external
 ```
 
 Add to `ansible/group_vars/secrets.vault.yml`:
+
 ```yaml
 db_host: external-db-host.com
 db_port: 3306
@@ -159,6 +205,7 @@ db_password: your_external_db_password
 ```
 
 Re-encrypt:
+
 ```bash
 ansible-vault encrypt ansible/group_vars/secrets.vault.yml --vault-password-file .vaultpass
 ```
@@ -277,4 +324,3 @@ Production Server (BitLaunch)
 3. Add backup automation
 4. Set up staging environment
 5. Configure CDN for assets (optional)
-

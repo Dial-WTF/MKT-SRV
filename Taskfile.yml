@@ -48,6 +48,14 @@ tasks:
     desc: Generate a random Ansible Vault password (.vaultpass)
     cmds:
       - bash scripts/gen-vaultpass.sh
+  gh:secrets:
+    desc: Configure GitHub repository secrets for CI/CD
+    cmds:
+      - bash scripts/setup-github-secrets.sh
+  dns:update:
+    desc: Update Dynadot DNS A record to point to provisioned server
+    cmds:
+      - bash scripts/update-dns-dynadot.sh
   docker:up:
     desc: Start Docker dev environment (Mautic + MariaDB + Redis)
     cmds:
