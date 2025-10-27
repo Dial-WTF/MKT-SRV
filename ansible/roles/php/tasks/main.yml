@@ -5,30 +5,30 @@
 - name: Install PHP-FPM and extensions
   apt:
     name:
-      - "php{{ php_version }}"
-      - "php{{ php_version }}-fpm"
-      - "php{{ php_version }}-cli"
-      - "php{{ php_version }}-mysql"
-      - "php{{ php_version }}-xml"
-      - "php{{ php_version }}-mbstring"
-      - "php{{ php_version }}-curl"
-      - "php{{ php_version }}-zip"
-      - "php{{ php_version }}-intl"
-      - "php{{ php_version }}-gd"
-      - "php{{ php_version }}-imap"
-      - "php{{ php_version }}-ldap"
-      - "php{{ php_version }}-opcache"
+      - "php{{ php_version | default('8.2') }}"
+      - "php{{ php_version | default('8.2') }}-fpm"
+      - "php{{ php_version | default('8.2') }}-cli"
+      - "php{{ php_version | default('8.2') }}-mysql"
+      - "php{{ php_version | default('8.2') }}-xml"
+      - "php{{ php_version | default('8.2') }}-mbstring"
+      - "php{{ php_version | default('8.2') }}-curl"
+      - "php{{ php_version | default('8.2') }}-zip"
+      - "php{{ php_version | default('8.2') }}-intl"
+      - "php{{ php_version | default('8.2') }}-gd"
+      - "php{{ php_version | default('8.2') }}-imap"
+      - "php{{ php_version | default('8.2') }}-ldap"
+      - "php{{ php_version | default('8.2') }}-opcache"
     state: present
     update_cache: yes
 
 - name: Create PHP-FPM pool for Mautic
   copy:
-    dest: "/etc/php/{{ php_version }}/fpm/pool.d/mautic.conf"
+    dest: "/etc/php/{{ php_version | default('8.2') }}/fpm/pool.d/mautic.conf"
     content: |
       [mautic]
       user = www-data
       group = www-data
-      listen = /run/php/php{{ php_version }}-fpm-mautic.sock
+      listen = /run/php/php{{ php_version | default('8.2') }}-fpm-mautic.sock
       listen.owner = www-data
       listen.group = www-data
       pm = dynamic
@@ -46,13 +46,12 @@
 
 - name: Disable default www pool
   lineinfile:
-    path: "/etc/php/{{ php_version }}/fpm/pool.d/www.conf"
+    path: "/etc/php/{{ php_version | default('8.2') }}/fpm/pool.d/www.conf"
     regexp: '^\[www\]'
     line: ';[www]'
 
 - name: Enable PHP-FPM
   service:
-    name: "php{{ php_version }}-fpm"
+    name: "php{{ php_version | default('8.2') }}-fpm"
     state: started
     enabled: true
-

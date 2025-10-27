@@ -17,18 +17,19 @@
   args:
     creates: /swapfile
 
-- name: UFW basics
-  ufw:
-    state: enabled
-    policy: deny
-
 - name: Allow OpenSSH
   ufw:
     rule: allow
     name: OpenSSH
 
+- name: UFW basics (enable after allowing SSH)
+  ufw:
+    state: enabled
+    policy: deny
+
 - name: Allow Nginx Full
   ufw:
     rule: allow
-    name: "Nginx Full"
+    name: 'Nginx Full'
+  when: false # moved to nginx role after install
 

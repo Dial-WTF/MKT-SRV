@@ -12,14 +12,14 @@
     content: |
       server {
           listen 80;
-          server_name {{ domain }};
+      server_name {{ domain | default('_') }};
           root /opt/mautic/apps/mautic/current/public;
           index index.php index.html;
-          client_max_body_size {{ max_upload }};
+          client_max_body_size {{ max_upload | default('25M') }};
           location / { try_files $uri /index.php$is_args$args; }
           location ~ \.php$ {
               include snippets/fastcgi-php.conf;
-              fastcgi_pass unix:/run/php/php{{ php_version }}-fpm-mautic.sock;
+              fastcgi_pass unix:/run/php/php{{ php_version | default('8.2') }}-fpm-mautic.sock;
               fastcgi_read_timeout 300;
           }
           location ~* \.(?:css|js|jpg|jpeg|gif|png|svg|ico|woff|woff2)$ { expires 7d; access_log off; }
@@ -40,8 +40,16 @@
 - name: Test & reload
   shell: nginx -t && systemctl reload nginx
 
+- name: Allow HTTP/HTTPS through UFW
+  ufw:
+    rule: allow
+    port: '{{ item }}'
+    proto: tcp
+  loop:
+    - 80
+    - 443
+
 - name: Obtain/renew Let's Encrypt (optional)
   shell: |
     certbot --nginx -d {{ domain }} -m {{ letsencrypt_email }} --agree-tos --redirect --non-interactive
   when: enable_letsencrypt | default(false)
-

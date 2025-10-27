@@ -1,20 +1,22 @@
-domain: "mautic.example.com"
-letsencrypt_email: "ops@example.com"
-php_version: "8.2"
-max_upload: "25M"
+domain: 'mautic.example.com'
+letsencrypt_email: 'ops@example.com'
+php_version: '8.2'
+max_upload: '25M'
 
-db_backend: "local"
+db_backend: 'local'
+
+# Defaults for TLS
+enable_letsencrypt: false
 
 mautic:
-  admin_user: "admin"
-  admin_email: "ops@example.com"
-  url: "https://{{ domain }}"
+  admin_user: 'admin'
+  admin_email: 'ops@example.com'
+  url: 'https://{{ domain }}'
   db:
-    name: "mautic"
-    user: "mautic"
+    name: 'mautic'
+    user: 'mautic'
 
 smtp:
-  host: ""
+  host: ''
   port: 587
   encryption: tls
-

@@ -1,6 +1,6 @@
 - name: Ensure dirs
   file:
-    path: "/opt/mautic/apps/mautic/releases"
+    path: '/opt/mautic/apps/mautic/releases'
     state: directory
     owner: www-data
     group: www-data
@@ -17,7 +17,7 @@
     cd /opt/mautic/apps/mautic && composer create-project mautic/recommended-project releases/$TS --no-interaction
     ln -sfn /opt/mautic/apps/mautic/releases/$TS /opt/mautic/apps/mautic/current
   args:
-    creates: "/opt/mautic/apps/mautic/current"
+    creates: '/opt/mautic/apps/mautic/current'
 
 - name: Write .env.local
   copy:
@@ -27,7 +27,11 @@
     mode: '0644'
     content: |
       MAUTIC_ENV=prod
+      {% if domain is defined and domain|length > 0 %}
       MAUTIC_URL=https://{{ domain }}
+      {% else %}
+      MAUTIC_URL=http://{{ ansible_default_ipv4.address | default('localhost') }}
+      {% endif %}
       {% if db_backend == 'external' %}
       DB_HOST={{ db_host }}
       DB_PORT={{ db_port | default(3306) }}
@@ -63,4 +67,3 @@
       * * * * * www-data php /opt/mautic/apps/mautic/current/bin/console mautic:segments:update --batch-limit=300 >> /opt/mautic/logs/cron.log 2>&1
       */5 * * * * www-data php /opt/mautic/apps/mautic/current/bin/console mautic:campaigns:update >> /opt/mautic/logs/cron.log 2>&1
       */5 * * * * www-data php /opt/mautic/apps/mautic/current/bin/console mautic:campaigns:trigger >> /opt/mautic/logs/cron.log 2>&1
-

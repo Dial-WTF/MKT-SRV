@@ -113,9 +113,72 @@ ansible-playbook -i ansible/inventories/production/hosts.ini ansible/playbooks/s
   - `task lint` — run linters
   - `task ping` — Ansible ping
   - `task deploy:localdb` — provision with local DB
-  - `task deploy:externaldb` — provision pointing to external DB
-  - `task bl:provision` — create a BitLaunch server and write inventory
-  - `task bl:destroy IP=1.2.3.4` — destroy a BitLaunch server by IP
+- `task deploy:externaldb` — provision pointing to external DB
+- `task bl:provision` — create a BitLaunch server and write inventory
+- `task bl:destroy IP=1.2.3.4` — destroy a BitLaunch server by IP
+- `task dev:up` — launch a local dev VM via Multipass and write dev inventory
+- `task dev:down` — destroy the local dev VM
+- `task docker:provision` — **one-command setup**: start Docker + configure database
+- `task docker:setup` — setup Docker dev environment with vault secrets
+- `task docker:up` — start Docker dev environment only
+- `task docker:down` — stop Docker dev environment
+- `task docker:logs` — view Docker dev environment logs
+
+### Local dev options
+
+#### Option 1: Docker (Recommended for dev)
+
+**🚀 Single Command Setup** (Complete automation):
+
+```bash
+# One command does everything!
+bash scripts/setup-dev.sh
+```
+
+**What happens automatically:**
+
+- ✅ Generates vault password and secrets
+- ✅ Encrypts secrets with ansible-vault
+- ✅ Starts MariaDB, Redis, and Mautic containers
+- ✅ **Database auto-initializes** when container starts
+- ✅ Creates database user and permissions automatically
+- ✅ **Shows exact credentials** for the web installer
+
+**Simple 2-Step Web Setup:**
+
+1. Run `task docker:provision` or `bash scripts/setup-dev.sh`
+2. Visit http://localhost:8000/installer and paste the credentials shown
+3. Click through 2 pages (takes 30 seconds)
+4. Login and start using Mautic!
+
+**For new users:**
+
+```bash
+# Just run this - it handles everything
+bash scripts/setup-dev.sh
+
+# Visit http://localhost:8000
+# Use credentials shown by the command
+```
+
+**Manual control (if needed):**
+
+```bash
+docker-compose -f docker-compose.dev.yml up -d    # Start containers only
+docker-compose -f docker-compose.dev.yml logs -f  # View logs
+docker-compose -f docker-compose.dev.yml down     # Stop everything
+```
+
+#### Option 2: Multipass VM (for Ansible testing)
+
+Full Ubuntu VM matching production:
+
+```bash
+# Requires: brew install --cask multipass
+task dev:up
+ansible -i ansible/inventories/dev/hosts.ini web -m ping
+task deploy:localdb INV=ansible/inventories/dev/hosts.ini
+```
 
 ## Optional: Provisioning via BitLaunch
 

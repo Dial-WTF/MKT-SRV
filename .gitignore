@@ -1,3 +1,11 @@
+# Ansible Vault password file (keep secret, do not commit)
+.vaultpass
+
+# Docker dev environment variables
+.env
+
+# Logs
+logs/
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
@@ -82,3 +90,4 @@ npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 .pnpm-debug.log*
+.llm-examples/*

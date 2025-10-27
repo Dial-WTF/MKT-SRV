@@ -1,0 +1,72 @@
+services:
+  mautic:
+    image: mautic/mautic:latest
+    ports:
+      - '8000:80'
+    environment:
+      MAUTIC_DB_HOST: db
+      MAUTIC_DB_PORT: 3306
+      MAUTIC_DB_NAME: ${MYSQL_DATABASE:-mautic}
+      MAUTIC_DB_USER: mautic
+      MAUTIC_DB_PASSWORD: ${MAUTIC_DB_PASSWORD}
+      MAUTIC_ADMIN_USER: ${MAUTIC_ADMIN_USER:-admin}
+      MAUTIC_ADMIN_PASSWORD: ${MAUTIC_ADMIN_PASSWORD}
+      MAUTIC_ADMIN_EMAIL: ${MAUTIC_ADMIN_EMAIL:-admin@example.com}
+      MAUTIC_URL: ${MAUTIC_URL:-http://localhost:8000}
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_started
+    volumes:
+      - mautic_data:/var/www/html
+    networks:
+      - mautic_net
+
+  db:
+    image: mariadb:10.11
+    ports:
+      - '3306:3306'
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+      MYSQL_ROOT_HOST: '%'
+      MYSQL_DATABASE: ${MYSQL_DATABASE:-mautic}
+      MYSQL_USER: mautic
+      MYSQL_PASSWORD: ${MAUTIC_DB_PASSWORD}
+      MYSQL_ALLOW_EMPTY_PASSWORD: 'no'
+    volumes:
+      - db_data:/var/lib/mysql
+    healthcheck:
+      test: ['CMD', 'mysqladmin', 'ping', '-h', 'localhost']
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+    networks:
+      - mautic_net
+
+  redis:
+    image: redis:7-alpine
+    ports:
+      - '6379:6379'
+    networks:
+      - mautic_net
+
+  # Optional: Mailhog for testing emails
+  mailhog:
+    image: mailhog/mailhog:latest
+    ports:
+      - '1025:1025' # SMTP
+      - '8025:8025' # Web UI
+    environment:
+      MH_SMTP_BIND_ADDR: 0.0.0.0:1025
+    networks:
+      - mautic_net
+
+volumes:
+  mautic_data:
+  db_data:
+
+networks:
+  mautic_net:
+    driver: bridge

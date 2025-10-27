@@ -36,3 +36,63 @@ tasks:
     dir: ansible
     cmds:
       - ansible-playbook -i {{.INV}} playbooks/site.yml --vault-password-file ../.vaultpass -e db_backend=external -e db_host=${DB_HOST} -e db_port=${DB_PORT:-3306} -e db_name=${DB_NAME:-mautic} -e db_user=${DB_USER:-mautic}
+  dev:up:
+    desc: Launch local dev VM via Multipass and write dev inventory
+    cmds:
+      - bash scripts/dev-vm-up.sh
+  dev:down:
+    desc: Destroy local dev VM
+    cmds:
+      - bash scripts/dev-vm-down.sh
+  gen:vaultpass:
+    desc: Generate a random Ansible Vault password (.vaultpass)
+    cmds:
+      - bash scripts/gen-vaultpass.sh
+  docker:up:
+    desc: Start Docker dev environment (Mautic + MariaDB + Redis)
+    cmds:
+      - docker-compose -f docker-compose.dev.yml up -d
+  docker:down:
+    desc: Stop Docker dev environment
+    cmds:
+      - docker-compose -f docker-compose.dev.yml down
+  docker:logs:
+    desc: View Docker dev environment logs
+    cmds:
+      - docker-compose -f docker-compose.dev.yml logs -f
+  docker:setup:
+    desc: Setup Docker dev environment with vault secrets (auto-generates .env)
+    cmds:
+      - bash scripts/setup-docker-dev.sh
+  docker:provision:
+    desc: 'Complete automated setup: generate secrets, start Docker, database auto-configures'
+    cmds:
+      - echo "🔐 Step 1 - Generating vault password"
+      - task: gen:vaultpass
+      - echo "🔑 Step 2 - Generating secrets"
+      - task: prepare
+      - echo "🐳 Step 3 - Starting Docker containers (database will auto-initialize)"
+      - docker-compose -f docker-compose.dev.yml down -v
+      - docker-compose -f docker-compose.dev.yml up -d
+      - echo "⏳ Step 4 - Mautic is ready for web setup"
+      - |
+        echo ""
+        echo "✅ SETUP COMPLETE!"
+        echo ""
+        echo "🌐 Visit: http://localhost:8000/installer"
+        echo ""
+        echo "📋 Database credentials (use in web installer):"
+        echo "  Host: db"
+        echo "  Port: 3306"
+        echo "  Database: mautic"
+        echo "  Username: mautic"
+        echo "  Password: cp5eotw22jtsjw!uasz9ys97ggyr3"
+        echo "  Table Prefix: bak_"
+        echo ""
+        echo "👤 Admin user (create in step 2):"
+        echo "  Username: admin"
+        echo "  Password: l6ibq0qrlwqgjqjc"
+        echo "  Email: info@dial.wtf"
+        echo ""
+        echo "📊 Logs: docker-compose -f docker-compose.dev.yml logs -f"
+        echo "🛑 Stop: docker-compose -f docker-compose.dev.yml down"
