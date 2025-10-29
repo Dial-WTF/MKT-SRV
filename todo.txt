@@ -1,0 +1,2 @@
+Fix remote deploy to bitlaunch
+investigate the workflow hooks in .github (maybe use border0 as a static ip for the dynadot dns for static whitelist ip.)

@@ -6,6 +6,14 @@
     group: www-data
     mode: '0755'
 
+- name: Install Node.js and npm
+  apt:
+    name:
+      - nodejs
+      - npm
+    state: present
+    update_cache: yes
+
 - name: Install Composer
   apt:
     name: composer
@@ -19,45 +27,233 @@
   args:
     creates: '/opt/mautic/apps/mautic/current'
 
-- name: Write .env.local
+- name: Remove .env.local if it exists
+  file:
+    path: /opt/mautic/apps/mautic/current/.env.local
+    state: absent
+
+- name: Configure Mautic .env file with database credentials
+  lineinfile:
+    path: /opt/mautic/apps/mautic/current/.env
+    regexp: '^{{ item.key }}='
+    line: '{{ item.key }}={{ item.value }}'
+    create: yes
+  loop:
+    - { key: 'MAUTIC_DB_DRIVER', value: 'pdo_mysql' }
+    - { key: 'MAUTIC_DB_HOST', value: '127.0.0.1' }
+    - { key: 'MAUTIC_DB_PORT', value: '3306' }
+    - {
+        key: 'MAUTIC_DB_NAME',
+        value: '{{ mautic.db.name | default("mautic") }}',
+      }
+    - {
+        key: 'MAUTIC_DB_USER',
+        value: '{{ mautic.db.user | default("mautic") }}',
+      }
+    - { key: 'MAUTIC_DB_PASSWORD', value: '{{ mautic.db.password }}' }
+    - { key: 'MAUTIC_DB_CHARSET', value: 'utf8mb4' }
+    - {
+        key: 'MAUTIC_REQUEST_CONTEXT_HOST',
+        value: '{{ ansible_default_ipv4.address }}',
+      }
+    - { key: 'MAUTIC_REQUEST_CONTEXT_SCHEME', value: 'http' }
+    - { key: 'MAUTIC_REQUEST_CONTEXT_BASE_URL', value: '' }
+    - { key: 'MAUTIC_REQUEST_CONTEXT_HTTP_PORT', value: '80' }
+    - { key: 'MAUTIC_REQUEST_CONTEXT_HTTPS_PORT', value: '443' }
+
+- name: Create Mautic local.php config in docroot
   copy:
-    dest: /opt/mautic/apps/mautic/current/.env.local
+    dest: /opt/mautic/apps/mautic/current/docroot/app/config/local.php
+    content: |
+      <?php
+      return [
+          'db_driver' => 'pdo_mysql',
+          'db_host' => '127.0.0.1',
+          'db_port' => '3306',
+          'db_name' => '{{ mautic.db.name | default("mautic") }}',
+          'db_user' => '{{ mautic.db.user | default("mautic") }}',
+          'db_password' => '{{ mautic.db.password }}',
+          'db_table_prefix' => null,
+          'db_path' => null,
+          'db_socket' => null,
+          'db_charset' => 'utf8mb4',
+          'cache_path' => '%kernel.root_dir%/../var/cache',
+          'log_path' => '%kernel.root_dir%/../var/logs',
+          'spool_path' => '%kernel.root_dir%/../var/spool',
+          'mailer_from_name' => 'Mautic',
+          'mailer_from_email' => '{{ mautic.admin_email }}',
+          'mailer_transport' => 'smtp',
+          'mailer_host' => null,
+          'mailer_port' => null,
+          'mailer_user' => null,
+          'mailer_password' => null,
+          'mailer_encryption' => null,
+          'mailer_auth_mode' => null,
+          'mailer_spool_type' => 'memory',
+          'mailer_spool_path' => '%kernel.root_dir%/../var/spool',
+          'secret_key' => '{{ mautic.secret_key }}',
+          'site_url' => 'http://{{ ansible_default_ipv4.address }}',
+      ];
     owner: www-data
     group: www-data
     mode: '0644'
-    content: |
-      MAUTIC_ENV=prod
-      {% if domain is defined and domain|length > 0 %}
-      MAUTIC_URL=https://{{ domain }}
-      {% else %}
-      MAUTIC_URL=http://{{ ansible_default_ipv4.address | default('localhost') }}
-      {% endif %}
-      {% if db_backend == 'external' %}
-      DB_HOST={{ db_host }}
-      DB_PORT={{ db_port | default(3306) }}
-      DB_NAME={{ db_name }}
-      DB_USER={{ db_user }}
-      DB_PASSWORD={{ db_password }}
-      {% else %}
-      DB_HOST=127.0.0.1
-      DB_PORT=3306
-      DB_NAME={{ mautic.db.name }}
-      DB_USER={{ mautic.db.user }}
-      DB_PASSWORD={{ mautic.db.password }}
-      {% endif %}
-      CACHE_ADAPTER=redis
-      REDIS_HOST=127.0.0.1
-      REDIS_PORT=6379
+
+- name: Remove existing web root directory
+  file:
+    path: /var/www/html
+    state: absent
+
+- name: Create web root symlink
+  file:
+    src: /opt/mautic/apps/mautic/current/docroot
+    dest: /var/www/html
+    state: link
+
+- name: Set proper permissions for Mautic release
+  file:
+    path: /opt/mautic/apps/mautic/current
+    owner: www-data
+    group: www-data
+    follow: yes
+
+- name: Create cache and log directories
+  file:
+    path: '{{ item }}'
+    state: directory
+    owner: www-data
+    group: www-data
+    mode: '0755'
+  loop:
+    - /opt/mautic/apps/mautic/current/var/cache/prod
+    - /opt/mautic/apps/mautic/current/var/cache/prod/doctrine
+    - /opt/mautic/apps/mautic/current/var/cache/prod/doctrine/orm
+    - /opt/mautic/apps/mautic/current/var/cache/prod/doctrine/orm/Proxies
+    - /opt/mautic/apps/mautic/current/var/logs
+
+- name: Ensure var directory permissions
+  file:
+    path: /opt/mautic/apps/mautic/current/var
+    state: directory
+    owner: www-data
+    group: www-data
+    mode: '0755'
+    recurse: yes
+
+- name: Create npm cache directory
+  file:
+    path: /var/www/.npm
+    state: directory
+    owner: www-data
+    group: www-data
+    mode: '0755'
+
+- name: Clear Mautic cache before installation
+  become_user: www-data
+  shell: |
+    cd /opt/mautic/apps/mautic/current && \
+    rm -rf var/cache/prod/* && \
+    MAUTIC_DB_DRIVER=pdo_mysql \
+    MAUTIC_DB_HOST=127.0.0.1 \
+    MAUTIC_DB_PORT=3306 \
+    MAUTIC_DB_NAME={{ mautic.db.name | default("mautic") }} \
+    MAUTIC_DB_USER={{ mautic.db.user | default("mautic") }} \
+    MAUTIC_DB_PASSWORD={{ mautic.db.password }} \
+    MAUTIC_DB_CHARSET=utf8mb4 \
+    MAUTIC_REQUEST_CONTEXT_HOST={{ ansible_default_ipv4.address }} \
+    MAUTIC_REQUEST_CONTEXT_SCHEME=http \
+    MAUTIC_REQUEST_CONTEXT_BASE_URL= \
+    MAUTIC_REQUEST_CONTEXT_HTTP_PORT=80 \
+    MAUTIC_REQUEST_CONTEXT_HTTPS_PORT=443 \
+    php bin/console cache:clear --env=prod || true
+
+- name: Install Mautic first
+  become_user: www-data
+  shell: |
+    cd /opt/mautic/apps/mautic/current && \
+    MAUTIC_DB_DRIVER=pdo_mysql \
+    MAUTIC_DB_HOST=127.0.0.1 \
+    MAUTIC_DB_PORT=3306 \
+    MAUTIC_DB_NAME={{ mautic.db.name | default("mautic") }} \
+    MAUTIC_DB_USER={{ mautic.db.user | default("mautic") }} \
+    MAUTIC_DB_PASSWORD={{ mautic.db.password }} \
+    MAUTIC_DB_CHARSET=utf8mb4 \
+    MAUTIC_REQUEST_CONTEXT_HOST={{ ansible_default_ipv4.address }} \
+    MAUTIC_REQUEST_CONTEXT_SCHEME=http \
+    MAUTIC_REQUEST_CONTEXT_BASE_URL= \
+    MAUTIC_REQUEST_CONTEXT_HTTP_PORT=80 \
+    MAUTIC_REQUEST_CONTEXT_HTTPS_PORT=443 \
+    php bin/console mautic:install http://{{ ansible_default_ipv4.address }} \
+      --db_driver=pdo_mysql \
+      --db_host=127.0.0.1 \
+      --db_port=3306 \
+      --db_name={{ mautic.db.name | default("mautic") }} \
+      --db_user={{ mautic.db.user | default("mautic") }} \
+      --db_password={{ mautic.db.password }} \
+      --admin_email={{ mautic.admin_email }} \
+      --admin_password={{ mautic.admin_password }} \
+      --force || true
+
+- name: Install Node.js dependencies
+  become_user: www-data
+  shell: |
+    cd /opt/mautic/apps/mautic/current && \
+    npm install || true
+
+- name: Create media directory with proper permissions
+  file:
+    path: /opt/mautic/apps/mautic/current/docroot/media
+    state: directory
+    owner: www-data
+    group: www-data
+    mode: '0755'
+
+- name: Build Mautic assets
+  become_user: www-data
+  shell: |
+    cd /opt/mautic/apps/mautic/current && \
+    npm run build || true
+
+- name: Check if migrations are needed
+  become_user: www-data
+  shell: |
+    cd /opt/mautic/apps/mautic/current && \
+    MAUTIC_DB_DRIVER=pdo_mysql \
+    MAUTIC_DB_HOST=127.0.0.1 \
+    MAUTIC_DB_PORT=3306 \
+    MAUTIC_DB_NAME={{ mautic.db.name | default("mautic") }} \
+    MAUTIC_DB_USER={{ mautic.db.user | default("mautic") }} \
+    MAUTIC_DB_PASSWORD={{ mautic.db.password }} \
+    MAUTIC_DB_CHARSET=utf8mb4 \
+    MAUTIC_REQUEST_CONTEXT_HOST={{ ansible_default_ipv4.address }} \
+    MAUTIC_REQUEST_CONTEXT_SCHEME=http \
+    MAUTIC_REQUEST_CONTEXT_BASE_URL= \
+    MAUTIC_REQUEST_CONTEXT_HTTP_PORT=80 \
+    MAUTIC_REQUEST_CONTEXT_HTTPS_PORT=443 \
+    php bin/console doctrine:migrations:status --no-interaction
+  register: migrations_status
+  failed_when: false
+  changed_when: false
 
 - name: Run migrations
   become_user: www-data
   shell: |
-    cd /opt/mautic/apps/mautic/current && php bin/console doctrine:migrations:migrate --no-interaction
+    cd /opt/mautic/apps/mautic/current && \
+    MAUTIC_DB_DRIVER=pdo_mysql \
+    MAUTIC_DB_HOST=127.0.0.1 \
+    MAUTIC_DB_PORT=3306 \
+    MAUTIC_DB_NAME={{ mautic.db.name | default("mautic") }} \
+    MAUTIC_DB_USER={{ mautic.db.user | default("mautic") }} \
+    MAUTIC_DB_PASSWORD={{ mautic.db.password }} \
+    MAUTIC_DB_CHARSET=utf8mb4 \
+    MAUTIC_REQUEST_CONTEXT_HOST={{ ansible_default_ipv4.address }} \
+    MAUTIC_REQUEST_CONTEXT_SCHEME=http \
+    MAUTIC_REQUEST_CONTEXT_BASE_URL= \
+    MAUTIC_REQUEST_CONTEXT_HTTP_PORT=80 \
+    MAUTIC_REQUEST_CONTEXT_HTTPS_PORT=443 \
+    php bin/console doctrine:migrations:migrate --no-interaction
+  when: "'New Migrations:' in migrations_status.stdout and 'New Migrations: 0' not in migrations_status.stdout"
 
-- name: Create admin user if missing
-  become_user: www-data
-  shell: |
-    cd /opt/mautic/apps/mautic/current && php bin/console mautic:user:create --role=Admin --email={{ mautic.admin_email }} --username={{ mautic.admin_user }} --password={{ mautic.admin_password }} || true
+# Admin user is created by mautic:install command above
 
 - name: Cron jobs
   copy:

@@ -41,7 +41,10 @@ echo "==> Uploading SSH key to BitLaunch..."
 UPLOAD_RESPONSE=$(curl -s -X POST https://app.bitlaunch.io/api/ssh-keys \
   -H "Authorization: Bearer $BITLAUNCH_API_KEY" \
   -H "Content-Type: application/json" \
-  --data "{\n    \"name\": \"$KEY_NAME\",\n    \"content\": \"$PUBKEY_CONTENT\"\n  }")
+  --data "{
+    \"name\": \"$KEY_NAME\",
+    \"content\": \"$PUBKEY_CONTENT\"
+  }")
 
 SSH_KEY_ID=$(echo "$UPLOAD_RESPONSE" | jq -r '.id')
 if [[ -z "$SSH_KEY_ID" || "$SSH_KEY_ID" == "null" ]]; then
@@ -55,7 +58,17 @@ echo "==> Creating server on BitLaunch..."
 CREATE_RESPONSE=$(curl -s 'https://app.bitlaunch.io/api/servers' \
   -H "Authorization: Bearer $BITLAUNCH_API_KEY" \
   -H "Content-Type: application/json" \
-  --data "{\n    \"server\": {\n      \"name\": \"$SERVER_NAME\",\n      \"hostID\": $HOST_ID,\n      \"hostImageID\": \"$HOST_IMAGE_ID\",\n      \"sizeID\": \"$SIZE_ID\",\n      \"regionID\": \"$REGION_ID\",\n      \"sshKeys\": [\"$SSH_KEY_ID\"],\n      \"initscript\": $INITSCRIPT_CONTENT\n    }\n  }")
+  --data "{
+    \"server\": {
+      \"name\": \"$SERVER_NAME\",
+      \"hostID\": $HOST_ID,
+      \"hostImageID\": \"$HOST_IMAGE_ID\",
+      \"sizeID\": \"$SIZE_ID\",
+      \"regionID\": \"$REGION_ID\",
+      \"sshKeys\": [\"$SSH_KEY_ID\"],
+      \"initscript\": $INITSCRIPT_CONTENT
+    }
+  }")
 
 SERVER_ID=$(echo "$CREATE_RESPONSE" | jq -r '.id')
 if [[ -z "$SERVER_ID" || "$SERVER_ID" == "null" ]]; then

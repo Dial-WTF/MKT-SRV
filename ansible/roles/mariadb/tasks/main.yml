@@ -10,28 +10,33 @@
     state: started
     enabled: true
 
-- name: Secure root & create DB/user
+- name: Check if MariaDB root password is already set
+  command: mysql -u root -e "SELECT 1;" 2>/dev/null
+  register: mariadb_root_check
+  failed_when: false
+  changed_when: false
+
+- name: Set MariaDB root password
   mysql_user:
     name: root
     host: localhost
-    password: "{{ mautic.db_root_password }}"
+    password: '{{ mautic.db.db_root_password }}'
     login_unix_socket: /var/run/mysqld/mysqld.sock
-  when: mautic.db_root_password is defined
+  when: set_db_root_password | default(true) | bool and mariadb_root_check.rc == 0
 
 - name: Create database
   mysql_db:
-    name: "{{ mautic.db.name }}"
+    name: "{{ mautic.db.name | default('mautic') }}"
     encoding: utf8mb4
     collation: utf8mb4_unicode_ci
     login_user: root
-    login_password: "{{ mautic.db_root_password }}"
+    login_unix_socket: /var/run/mysqld/mysqld.sock
 
 - name: Create user
   mysql_user:
-    name: "{{ mautic.db.user }}"
-    password: "{{ mautic.db.password }}"
+    name: "{{ mautic.db.user | default('mautic') }}"
+    password: "{{ mautic.db.password | default('changeme') }}"
     host: localhost
-    priv: "{{ mautic.db.name }}.*:ALL"
+    priv: "{{ (mautic.db.name | default('mautic')) }}.*:ALL"
     login_user: root
-    login_password: "{{ mautic.db_root_password }}"
-
+    login_unix_socket: /var/run/mysqld/mysqld.sock

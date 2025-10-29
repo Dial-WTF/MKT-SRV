@@ -1,0 +1,492 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>DIAL PRE-SALE</title>
+    <meta
+      name="description"
+      content="DIAL token pre-sale. Web3-native • AI-powered • Crypto-integrated."
+    />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;600;700&family=Inter:wght@400;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <style>
+      :root {
+        --bg: #0a0a0f;
+        --panel: #0f0f16;
+        --accent: #9cff57;
+        --accent2: #b5ff7a;
+        --muted: #9aa0a6;
+        --text: #e9f0f6;
+        --link: #cde7ff;
+        --border: #1b1b25;
+        --card: #0c0c12;
+        --grad: radial-gradient(
+            1200px 800px at 80% -10%,
+            rgba(156, 255, 87, 0.18),
+            transparent 60%
+          ),
+          radial-gradient(
+            800px 600px at -10% 20%,
+            rgba(181, 255, 122, 0.12),
+            transparent 60%
+          );
+      }
+      html,
+      body {
+        height: 100%;
+      }
+      * {
+        box-sizing: border-box;
+      }
+      body {
+        margin: 0;
+        background: var(--bg);
+        color: var(--text);
+        font-family: Inter, system-ui, -apple-system, Segoe UI, Roboto, Ubuntu,
+          Arial, sans-serif;
+        line-height: 1.5;
+      }
+      a {
+        color: var(--link);
+        text-decoration: none;
+      }
+      a:hover {
+        opacity: 0.9;
+      }
+      .wrap {
+        min-height: 100%;
+        background: var(--grad);
+      }
+      header {
+        position: sticky;
+        top: 0;
+        z-index: 10;
+        background: rgba(10, 10, 15, 0.7);
+        backdrop-filter: saturate(140%) blur(8px);
+        border-bottom: 1px solid var(--border);
+      }
+      .nav {
+        max-width: 1100px;
+        margin: 0 auto;
+        display: flex;
+        align-items: center;
+        gap: 24px;
+        padding: 14px 20px;
+      }
+      .brand {
+        font-family: 'Space Grotesk', Inter, sans-serif;
+        font-weight: 700;
+        letter-spacing: 1px;
+      }
+      .brand b {
+        color: var(--accent);
+      }
+      .nav ul {
+        display: flex;
+        gap: 18px;
+        margin: 0 0 0 auto;
+        padding: 0;
+        list-style: none;
+      }
+      .nav ul a {
+        padding: 8px 10px;
+        border-radius: 8px;
+        color: var(--text);
+      }
+      .nav ul a:hover {
+        background: var(--panel);
+      }
+      .cta {
+        margin-left: 12px;
+      }
+      .btn {
+        appearance: none;
+        border: 1px solid var(--border);
+        background: linear-gradient(180deg, #14141d, #0f0f16);
+        color: var(--text);
+        padding: 10px 14px;
+        border-radius: 10px;
+        cursor: pointer;
+        font-weight: 600;
+      }
+      .btn-accent {
+        border-color: #2e3d1d;
+        background: linear-gradient(180deg, #b5ff7a, #9cff57);
+        color: #0a1a00;
+        box-shadow: 0 4px 24px rgba(156, 255, 87, 0.25);
+      }
+      .btn-accent:hover {
+        filter: saturate(1.05);
+      }
+      .hero {
+        max-width: 1100px;
+        margin: 0 auto;
+        padding: 72px 20px 36px;
+        display: grid;
+        grid-template-columns: 1.2fr 0.8fr;
+        gap: 28px;
+        align-items: center;
+      }
+      .kicker {
+        color: var(--muted);
+        text-transform: uppercase;
+        letter-spacing: 0.14em;
+        font-size: 0.8rem;
+      }
+      h1 {
+        font-family: 'Space Grotesk', Inter, sans-serif;
+        font-size: 56px;
+        line-height: 1.05;
+        margin: 10px 0;
+      }
+      .sub {
+        color: #c7d0d8;
+        max-width: 620px;
+      }
+      .card {
+        background: var(--card);
+        border: 1px solid var(--border);
+        border-radius: 16px;
+        box-shadow: 0 8px 40px rgba(0, 0, 0, 0.35);
+        padding: 18px;
+      }
+      .panel {
+        display: flex;
+        flex-direction: column;
+        gap: 14px;
+      }
+      .row {
+        display: flex;
+        gap: 10px;
+        align-items: center;
+      }
+      .mono {
+        font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas,
+          'Liberation Mono', 'Courier New', monospace;
+        font-size: 0.92rem;
+      }
+      .pill {
+        padding: 6px 10px;
+        border: 1px solid var(--border);
+        border-radius: 999px;
+        color: #cfd6dd;
+      }
+      .muted {
+        color: var(--muted);
+      }
+      .grid {
+        max-width: 1100px;
+        margin: 0 auto;
+        padding: 36px 20px;
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 18px;
+      }
+      .feature {
+        background: var(--panel);
+        border: 1px solid var(--border);
+        border-radius: 14px;
+        padding: 18px;
+      }
+      section {
+        scroll-margin-top: 80px;
+      }
+      .foot {
+        max-width: 1100px;
+        margin: 0 auto;
+        padding: 32px 20px;
+        color: #adb5bd;
+        display: flex;
+        justify-content: space-between;
+        border-top: 1px solid var(--border);
+      }
+      .countdown {
+        display: flex;
+        gap: 10px;
+      }
+      .time {
+        background: var(--panel);
+        border: 1px solid var(--border);
+        border-radius: 10px;
+        padding: 10px 12px;
+        text-align: center;
+      }
+      .time b {
+        font-size: 22px;
+        display: block;
+      }
+      .token-input {
+        flex: 1;
+        min-width: 140px;
+        background: #0c0c12;
+        border: 1px solid var(--border);
+        border-radius: 10px;
+        color: var(--text);
+        padding: 10px;
+      }
+      .note {
+        font-size: 0.86rem;
+        color: #b6bec6;
+      }
+      .big {
+        font-size: 22px;
+        font-weight: 700;
+      }
+      @media (max-width: 900px) {
+        .hero {
+          grid-template-columns: 1fr;
+          gap: 20px;
+          padding-top: 28px;
+        }
+        .nav ul {
+          display: none;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="wrap">
+      <header>
+        <nav class="nav">
+          <div class="brand">DIAL <b>PRE-SALE</b></div>
+          <ul>
+            <li><a href="#presale">Presale</a></li>
+            <li><a href="#features">Features</a></li>
+            <li><a href="#roadmap">Roadmap</a></li>
+            <li><a href="#faq">FAQ</a></li>
+          </ul>
+          <button id="connectBtn" class="btn btn-accent cta">
+            Connect Wallet
+          </button>
+        </nav>
+      </header>
+
+      <section id="presale" class="hero">
+        <div>
+          <div class="kicker">Web3-native • AI-powered • Crypto-integrated</div>
+          <h1>DIAL PRE-SALE</h1>
+          <p class="sub">
+            Buy DIAL before listing. Connect with MetaMask-compatible wallets
+            and purchase with ETH securely on Ethereum.
+          </p>
+          <div class="countdown" id="countdown">
+            <div class="time"><b id="d">0</b><span>Days</span></div>
+            <div class="time"><b id="h">0</b><span>Hours</span></div>
+            <div class="time"><b id="m">0</b><span>Minutes</span></div>
+            <div class="time"><b id="s">0</b><span>Seconds</span></div>
+          </div>
+          <p class="note" id="saleStatus">Sale live now</p>
+        </div>
+        <div class="card panel">
+          <div class="row">
+            <span class="pill">Contract</span
+            ><span class="mono" id="contractAddress"
+              >0x0000000000000000000000000000000000000000</span
+            >
+          </div>
+          <div class="row">
+            <span class="pill">Token</span
+            ><span class="mono">DIAL • 18 decimals</span>
+          </div>
+          <div class="row">
+            <span class="pill">Price</span
+            ><span class="mono">1 ETH = <span id="rate">10000</span> DIAL</span>
+          </div>
+          <div class="row">
+            <input
+              id="ethAmount"
+              class="token-input"
+              placeholder="Amount in ETH"
+              inputmode="decimal"
+            /><button id="buyBtn" class="btn btn-accent">Buy</button>
+          </div>
+          <div class="row">
+            <span class="note"
+              >Wallet:
+              <span id="walletLabel" class="mono muted"
+                >Not connected</span
+              ></span
+            >
+          </div>
+        </div>
+      </section>
+
+      <section id="features" class="grid">
+        <div class="feature">
+          <h3>AI-augmented</h3>
+          <p>Smart interactions and insights for traders and creators.</p>
+        </div>
+        <div class="feature">
+          <h3>Crypto-native</h3>
+          <p>Built-first for Ethereum wallets and DeFi flows.</p>
+        </div>
+        <div class="feature">
+          <h3>Frictionless UX</h3>
+          <p>Fast wallet connect and one-tap token purchase.</p>
+        </div>
+      </section>
+
+      <section id="roadmap" class="grid">
+        <div class="feature">
+          <h3>Phase 1</h3>
+          <p>Presale launch and community bootstrapping.</p>
+        </div>
+        <div class="feature">
+          <h3>Phase 2</h3>
+          <p>DEX listing and liquidity incentives.</p>
+        </div>
+        <div class="feature">
+          <h3>Phase 3</h3>
+          <p>Utility integrations and partner apps.</p>
+        </div>
+      </section>
+
+      <section id="faq" class="grid">
+        <div class="feature">
+          <h3>How do I buy?</h3>
+          <p>Connect your wallet, enter ETH amount, then click Buy.</p>
+        </div>
+        <div class="feature">
+          <h3>Which wallets?</h3>
+          <p>
+            Any EIP-1193 provider (MetaMask, Coinbase Wallet, Brave, Rabby).
+          </p>
+        </div>
+        <div class="feature">
+          <h3>Network</h3>
+          <p>Ethereum mainnet. Ensure you have ETH for gas.</p>
+        </div>
+      </section>
+
+      <footer class="foot">
+        <span>© 2025 DIAL</span>
+        <span class="muted">Not investment advice. Do your own research.</span>
+      </footer>
+    </div>
+
+    <script>
+      // Basic configurable variables
+      const CONFIG = {
+        chainIdHex: '0x1', // Ethereum mainnet
+        saleContract: '0x0000000000000000000000000000000000000000', // TODO: replace
+        rate: 10000, // tokens per ETH
+        decimals: 18,
+        saleEnd: Date.now() + 7 * 24 * 60 * 60 * 1000 // 7 days from now (adjust)
+      };
+
+      // Countdown
+      const dEl = document.getElementById('d');
+      const hEl = document.getElementById('h');
+      const mEl = document.getElementById('m');
+      const sEl = document.getElementById('s');
+      const statusEl = document.getElementById('saleStatus');
+      function tick() {
+        const now = Date.now();
+        const remain = Math.max(0, CONFIG.saleEnd - now);
+        const d = Math.floor(remain / 86400000);
+        const h = Math.floor((remain % 86400000) / 3600000);
+        const m = Math.floor((remain % 3600000) / 60000);
+        const s = Math.floor((remain % 60000) / 1000);
+        dEl.textContent = d;
+        hEl.textContent = h;
+        mEl.textContent = m;
+        sEl.textContent = s;
+        statusEl.textContent = remain > 0 ? 'Sale live now' : 'Sale ended';
+      }
+      setInterval(tick, 1000);
+      tick();
+
+      // Web3 minimal helpers
+      const connectBtn = document.getElementById('connectBtn');
+      const walletLabel = document.getElementById('walletLabel');
+      const buyBtn = document.getElementById('buyBtn');
+      const ethAmount = document.getElementById('ethAmount');
+      const rateEl = document.getElementById('rate');
+      rateEl.textContent = CONFIG.rate.toLocaleString();
+
+      let provider;
+      let account;
+
+      function short(addr) {
+        return addr ? addr.slice(0, 6) + '...' + addr.slice(-4) : '';
+      }
+
+      async function ensureChain() {
+        const target = CONFIG.chainIdHex;
+        const current = await provider.request({ method: 'eth_chainId' });
+        if (current !== target) {
+          try {
+            await provider.request({
+              method: 'wallet_switchEthereumChain',
+              params: [{ chainId: target }]
+            });
+          } catch (e) {
+            console.warn('Chain switch rejected or failed', e);
+            throw e;
+          }
+        }
+      }
+
+      async function connect() {
+        if (!window.ethereum) {
+          alert('No Ethereum provider found. Install MetaMask.');
+          return;
+        }
+        provider = window.ethereum;
+        try {
+          const accs = await provider.request({
+            method: 'eth_requestAccounts'
+          });
+          account = accs[0];
+          walletLabel.textContent = short(account);
+          connectBtn.textContent = 'Connected';
+          await ensureChain();
+        } catch (e) {
+          console.error(e);
+          alert('Wallet connection rejected.');
+        }
+      }
+
+      async function buy() {
+        if (!provider || !account) {
+          await connect();
+          if (!account) return;
+        }
+        await ensureChain();
+        const valueEth = parseFloat(ethAmount.value);
+        if (!valueEth || valueEth <= 0) {
+          alert('Enter a valid ETH amount');
+          return;
+        }
+        const valueWei = '0x' + BigInt(Math.floor(valueEth * 1e6)).toString(16); // temp scale below; we'll use parseUnits-like
+        // Better conversion without external libs
+        function toWei(num) {
+          const [i, d = ''] = String(num).split('.');
+          const dec = (d + '0'.repeat(18)).slice(0, 18);
+          return BigInt(i + dec);
+        }
+        const weiHex = '0x' + toWei(valueEth).toString(16);
+
+        // Assume simple payable purchase: send ETH to sale contract
+        try {
+          const tx = await provider.request({
+            method: 'eth_sendTransaction',
+            params: [{ from: account, to: CONFIG.saleContract, value: weiHex }]
+          });
+          alert('Transaction submitted: ' + tx);
+        } catch (e) {
+          console.error(e);
+          alert('Transaction failed or rejected.');
+        }
+      }
+
+      connectBtn.addEventListener('click', connect);
+      buyBtn.addEventListener('click', buy);
+    </script>
+  </body>
+</html>

@@ -9,8 +9,16 @@
       - ufw
       - jq
       - acl
+      - python3-pip
     state: present
     update_cache: yes
+  async: 120
+  poll: 5
+
+- name: Install PyMySQL for Ansible MySQL modules (via apt)
+  apt:
+    name: python3-pymysql
+    state: present
 
 - name: Optional 2G swap
   command: bash -lc '[[ -f /swapfile ]] || (fallocate -l 2G /swapfile || dd if=/dev/zero of=/swapfile bs=1M count=2048 && chmod 600 /swapfile && mkswap /swapfile && swapon /swapfile && echo "/swapfile none swap sw 0 0" >> /etc/fstab)'

@@ -1,7 +1,7 @@
 version: '3'
 
 vars:
-  INV: ansible/inventories/production/hosts.ini
+  INV: inventories/production/hosts.ini
 
 tasks:
   bl:provision:
@@ -30,12 +30,20 @@ tasks:
       - ansible-playbook playbooks/prepare.yml
   deploy:localdb:
     dir: ansible
+    desc: Deploy with local database
     cmds:
-      - ansible-playbook -i {{.INV}} playbooks/site.yml --vault-password-file ../.vaultpass -e db_backend=local
+      - ansible-playbook -i {{.INV}} playbooks/site.yml --vault-password-file ../.vaultpass -e db_backend=local -e set_db_root_password=true -v
   deploy:externaldb:
     dir: ansible
     cmds:
-      - ansible-playbook -i {{.INV}} playbooks/site.yml --vault-password-file ../.vaultpass -e db_backend=external -e db_host=${DB_HOST} -e db_port=${DB_PORT:-3306} -e db_name=${DB_NAME:-mautic} -e db_user=${DB_USER:-mautic}
+      - |
+        if [ -n "${DB_HOST}" ]; then
+          echo "Using environment variables for external database..."
+          ansible-playbook -i {{.INV}} playbooks/site.yml --vault-password-file ../.vaultpass -e db_backend=external -e db_host=${DB_HOST} -e db_port=${DB_PORT:-3306} -e db_name=${DB_NAME:-mautic} -e db_user=${DB_USER:-mautic} -e db_password=${DB_PASSWORD}
+        else
+          echo "Using vault configuration for external database..."
+          ansible-playbook -i {{.INV}} playbooks/site.yml --vault-password-file ../.vaultpass -e db_backend=external
+        fi
   dev:up:
     desc: Launch local dev VM via Multipass and write dev inventory
     cmds:

@@ -1,10 +1,14 @@
 - name: Provision Mautic stack
   hosts: web
   become: true
+  vars_files:
+    - ../group_vars/all.yml
+    - ../group_vars/secrets.vault.yml
+  strategy: free
   roles:
     - common
+    - mariadb
     - nginx
     - php
-    - mariadb
     - redis
     - mautic

@@ -83,14 +83,14 @@ ansible-playbook -i ansible/inventories/production/hosts.ini ansible/playbooks/s
 1. Put Mautic in maintenance (UI) and stop crons
 2. Dump current DB:
 
-```bash
+   ```bash
 mysqldump -u root -p --single-transaction --routines --triggers mautic > mautic.sql
-```
+   ```
 
 3. Create DB/user on external MariaDB and import the dump
 4. Re-provision pointing to the external DB:
 
-```bash
+   ```bash
 ansible-playbook -i ansible/inventories/production/hosts.ini ansible/playbooks/site.yml \
   --vault-password-file .vaultpass \
   -e db_backend=external -e db_host="DB_HOST" -e db_port=3306 -e db_name="mautic" -e db_user="mautic"
@@ -131,7 +131,7 @@ ansible-playbook -i ansible/inventories/production/hosts.ini ansible/playbooks/s
 
 **🚀 Single Command Setup** (Complete automation):
 
-```bash
+   ```bash
 # One command does everything!
 bash scripts/setup-dev.sh
 ```
@@ -164,7 +164,7 @@ bash scripts/setup-dev.sh
 
 **Manual control (if needed):**
 
-```bash
+  ```bash
 docker-compose -f docker-compose.dev.yml up -d    # Start containers only
 docker-compose -f docker-compose.dev.yml logs -f  # View logs
 docker-compose -f docker-compose.dev.yml down     # Stop everything
@@ -174,7 +174,7 @@ docker-compose -f docker-compose.dev.yml down     # Stop everything
 
 Full Ubuntu VM matching production:
 
-```bash
+  ```bash
 # Requires: brew install --cask multipass
 task dev:up
 ansible -i ansible/inventories/dev/hosts.ini web -m ping

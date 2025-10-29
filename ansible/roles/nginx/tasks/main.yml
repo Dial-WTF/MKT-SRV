@@ -13,13 +13,13 @@
       server {
           listen 80;
       server_name {{ domain | default('_') }};
-          root /opt/mautic/apps/mautic/current/public;
+          root /var/www/html;
           index index.php index.html;
           client_max_body_size {{ max_upload | default('25M') }};
           location / { try_files $uri /index.php$is_args$args; }
           location ~ \.php$ {
               include snippets/fastcgi-php.conf;
-              fastcgi_pass unix:/run/php/php{{ php_version | default('8.2') }}-fpm-mautic.sock;
+              fastcgi_pass unix:/run/php/php{{ php_version | default('8.2') }}-fpm.sock;
               fastcgi_read_timeout 300;
           }
           location ~* \.(?:css|js|jpg|jpeg|gif|png|svg|ico|woff|woff2)$ { expires 7d; access_log off; }

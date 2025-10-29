@@ -17,7 +17,7 @@
       - "php{{ php_version | default('8.2') }}-gd"
       - "php{{ php_version | default('8.2') }}-imap"
       - "php{{ php_version | default('8.2') }}-ldap"
-      - "php{{ php_version | default('8.2') }}-opcache"
+      - "php{{ php_version | default('8.2') }}-bcmath"
     state: present
     update_cache: yes
 
@@ -37,11 +37,11 @@
       pm.min_spare_servers = 2
       pm.max_spare_servers = 8
       request_terminate_timeout = 300
-      php_admin_value[upload_max_filesize] = {{ max_upload }}
-      php_admin_value[post_max_size] = {{ max_upload }}
+      php_admin_value[upload_max_filesize] = {{ max_upload | default('25M') }}
+      php_admin_value[post_max_size] = {{ max_upload | default('25M') }}
       php_admin_value[memory_limit] = 512M
       php_admin_value[max_execution_time] = 300
-      chdir = /opt/mautic/apps/mautic/current/public
+      chdir = /var/www/html
       clear_env = no
 
 - name: Disable default www pool
